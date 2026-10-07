@@ -45,11 +45,20 @@
         <TextView android:text="🌐 Website URL" android:textColor="#90FFFFFF"
             android:textSize="12sp" android:layout_marginStart="4dp" android:layout_marginBottom="4dp"
             android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-        <EditText android:id="@+id/etUrl" android:hint="https://example.com"
-            android:textColorHint="#60FFFFFF" android:textColor="#FFFFFF" android:textSize="14sp"
-            android:padding="14dp" android:background="@drawable/input_bg"
-            android:inputType="textUri" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"/>
+        <LinearLayout android:orientation="horizontal" android:gravity="center_vertical"
+            android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="12dp">
+            <EditText android:id="@+id/etUrl" android:hint="https://example.com"
+                android:textColorHint="#60FFFFFF" android:textColor="#FFFFFF" android:textSize="14sp"
+                android:padding="14dp" android:background="@drawable/input_bg"
+                android:inputType="textUri" android:layout_weight="1" android:layout_width="0dp"
+                android:layout_height="wrap_content"/>
+            <ImageButton android:id="@+id/btnHistory"
+                android:src="@android:drawable/ic_menu_recent_history"
+                android:background="@drawable/btn_gradient"
+                android:tint="#FFFFFF" android:contentDescription="History"
+                android:layout_width="48dp" android:layout_height="48dp"
+                android:layout_marginStart="6dp"/>
+        </LinearLayout>
 
         <!-- INTERVAL + DURATION -->
         <LinearLayout android:orientation="horizontal" android:layout_width="match_parent"
