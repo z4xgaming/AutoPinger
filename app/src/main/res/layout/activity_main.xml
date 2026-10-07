@@ -140,6 +140,8 @@
                 android:layout_width="match_parent" android:layout_height="wrap_content"/>
         </LinearLayout>
 
+        <include layout="@layout/website_details"/>
+
         <TextView android:id="@+id/tvInfo"
             android:text="URL dalo, Duration choose karo, START dabao.\nHar ping pe Telegram pe notification jayegi (agar set kiya ho)."
             android:textColor="#D0FFFFFF" android:textSize="12sp" android:lineSpacingExtra="4dp"

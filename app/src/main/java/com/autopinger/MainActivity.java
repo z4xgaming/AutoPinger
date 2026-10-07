@@ -10,10 +10,12 @@ import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkRequest;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.Settings;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
@@ -30,6 +32,8 @@ public class MainActivity extends AppCompatActivity {
     Button btnStart, btnStop;
     ImageButton btnHistory;
     TextView tvStatus, tvInfo, tvUptime, tvExpiry, tvNextPing, tvWebsiteName, tvLiveStatus;
+    TextView dSiteName, dTitle, dDescription, dAuthor, dKeywords, dServer, dIp;
+    TextView dProtocol, dContentType, dResponse, dHttpCode, dContentLength, dH1;
     View liveDot;
     Spinner spDuration, spInterval;
     RainbowLoaderView loader;
@@ -87,9 +91,24 @@ public class MainActivity extends AppCompatActivity {
         tgSection = findViewById(R.id.tgSection);
         tgToggle = findViewById(R.id.tgToggle);
 
+        dSiteName = findViewById(R.id.dSiteName);
+        dTitle = findViewById(R.id.dTitle);
+        dDescription = findViewById(R.id.dDescription);
+        dAuthor = findViewById(R.id.dAuthor);
+        dKeywords = findViewById(R.id.dKeywords);
+        dServer = findViewById(R.id.dServer);
+        dIp = findViewById(R.id.dIp);
+        dProtocol = findViewById(R.id.dProtocol);
+        dContentType = findViewById(R.id.dContentType);
+        dResponse = findViewById(R.id.dResponse);
+        dHttpCode = findViewById(R.id.dHttpCode);
+        dContentLength = findViewById(R.id.dContentLength);
+        dH1 = findViewById(R.id.dH1);
+
         cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         registerNetworkCallback();
         requestNotificationPermission();
+        askBatteryOptimization();
 
         etUrl.setText(prefs.getString("url", ""));
         etTgToken.setText(prefs.getString("tg_token", ""));
@@ -108,7 +127,6 @@ public class MainActivity extends AppCompatActivity {
         btnStart.setOnClickListener(v -> startPinging());
         btnStop.setOnClickListener(v -> stopPinging());
         btnHistory.setOnClickListener(v -> showHistory());
-
         tgToggle.setOnClickListener(v ->
                 tgSection.setVisibility(tgSection.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE));
 
@@ -123,11 +141,41 @@ public class MainActivity extends AppCompatActivity {
         handler.post(uiUpdater);
     }
 
+    private void askBatteryOptimization() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return;
+        boolean asked = prefs.getBoolean("battery_asked", false);
+        if (asked) return;
+        prefs.edit().putBoolean("battery_asked", true).apply();
+
+        try {
+            android.os.PowerManager pm = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
+            if (pm != null && !pm.isIgnoringBatteryOptimizations(getPackageName())) {
+                AlertDialog.Builder bldr = new AlertDialog.Builder(this);
+                bldr.setTitle("🔋 Battery Optimization");
+                bldr.setMessage("Background pinging smooth rakhne ke liye, AutoPinger ko battery optimization se exempt karo.\n\n" +
+                        "Ye step ek hi baar karna hai — battery bachane ke liye aur service continuous chalane ke liye zaruri hai.");
+                bldr.setPositiveButton("Open Settings", (d, w) -> {
+                    try {
+                        Intent i = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+                        i.setData(Uri.parse("package:" + getPackageName()));
+                        startActivity(i);
+                    } catch (Exception e) {
+                        try {
+                            Intent i2 = new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
+                            startActivity(i2);
+                        } catch (Exception ignored) {}
+                    }
+                });
+                bldr.setNegativeButton("Baad mein", null);
+                bldr.show();
+            }
+        } catch (Exception ignored) {}
+    }
+
     private void requestNotificationPermission() {
         if (Build.VERSION.SDK_INT >= 33) {
-            try {
-                requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 101);
-            } catch (Exception ignored) {}
+            try { requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 101); }
+            catch (Exception ignored) {}
         }
     }
 
@@ -142,11 +190,11 @@ public class MainActivity extends AppCompatActivity {
         bldr.setTitle("🕒 URL History");
         bldr.setItems(items, (d, which) -> {
             etUrl.setText(items[which]);
-            Toast.makeText(this, "URL set: " + items[which], Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "URL set", Toast.LENGTH_SHORT).show();
         });
         bldr.setNegativeButton("Clear All", (d, w) -> {
             prefs.edit().remove("history").apply();
-            Toast.makeText(this, "History cleared", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Cleared", Toast.LENGTH_SHORT).show();
         });
         bldr.show();
     }
@@ -228,6 +276,9 @@ public class MainActivity extends AppCompatActivity {
                 .putString("tg_chat", etTgChat.getText().toString().trim())
                 .putInt("duration_idx", durIdx)
                 .putInt("interval_idx", intIdx)
+                .putLong("interval_ms", intervalMs)
+                .putLong("duration_ms", durationMs)
+                .putBoolean("was_running", true)
                 .apply();
 
         addToHistory(url);
@@ -243,7 +294,7 @@ public class MainActivity extends AppCompatActivity {
         spDuration.setEnabled(false);
         spInterval.setEnabled(false);
         loader.setLoading(true);
-        tvStatus.setText("🚀 Starting background service...");
+        tvStatus.setText("🚀 Starting service...");
 
         Intent svc = new Intent(this, AutoPingerService.class);
         svc.putExtra("url", url);
@@ -261,6 +312,7 @@ public class MainActivity extends AppCompatActivity {
         Intent svc = new Intent(this, AutoPingerService.class);
         stopService(svc);
         AutoPingerService.isRunning = false;
+        prefs.edit().putBoolean("was_running", false).apply();
         loader.setLoading(false);
         btnStart.setEnabled(true);
         btnStop.setEnabled(false);
@@ -279,8 +331,7 @@ public class MainActivity extends AppCompatActivity {
             int pct = p > 0 ? (s * 100 / p) : 0;
 
             tvStatus.setText(AutoPingerService.lastStatus);
-            tvWebsiteName.setText("Website: " + AutoPingerService.websiteName +
-                    "  —  " + AutoPingerService.websiteTitle);
+            tvWebsiteName.setText("Website: " + AutoPingerService.siteName);
             tvUptime.setText("Uptime: " + pct + "%  |  Pings: " + p + "  |  Success: " + s);
             setLiveStatus(p > 0 && s == p);
 
@@ -302,18 +353,31 @@ public class MainActivity extends AppCompatActivity {
                 tvNextPing.setText("Next ping in: " + (left / 60000L) + "m " + ((left % 60000L) / 1000L) + "s");
             }
 
+            updateDetails();
+
             loader.setLoading(true);
             btnStart.setEnabled(false);
             btnStop.setEnabled(true);
             etUrl.setEnabled(false);
-        } else if (btnStart.isEnabled() == false && !AutoPingerService.isRunning) {
-            loader.setLoading(false);
-            btnStart.setEnabled(true);
-            btnStop.setEnabled(false);
-            etUrl.setEnabled(true);
-            spDuration.setEnabled(true);
-            spInterval.setEnabled(true);
+            spDuration.setEnabled(false);
+            spInterval.setEnabled(false);
         }
+    }
+
+    private void updateDetails() {
+        dSiteName.setText("🌐 Website: " + AutoPingerService.siteName);
+        dTitle.setText("📄 Title: " + AutoPingerService.siteTitle);
+        dDescription.setText("📝 Description: " + AutoPingerService.siteDescription);
+        dAuthor.setText("👤 Author: " + AutoPingerService.siteAuthor);
+        dKeywords.setText("🔑 Keywords: " + AutoPingerService.siteKeywords);
+        dServer.setText("🖥️ Server: " + AutoPingerService.siteServer);
+        dIp.setText("📍 IP: " + AutoPingerService.siteIp);
+        dProtocol.setText("🔒 Protocol: " + AutoPingerService.siteProtocol);
+        dContentType.setText("📦 Content-Type: " + AutoPingerService.siteContentType);
+        dResponse.setText("⚡ Response: " + AutoPingerService.siteResponseMs + " ms");
+        dHttpCode.setText("📊 HTTP: " + AutoPingerService.siteCode);
+        dContentLength.setText("📏 Size: " + (AutoPingerService.siteContentLength / 1024) + " KB");
+        dH1.setText("🅷 H1: " + AutoPingerService.siteH1);
     }
 
     private void setLiveStatus(boolean live) {

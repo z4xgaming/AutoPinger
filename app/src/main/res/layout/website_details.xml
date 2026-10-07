@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/card_bg"
+    android:padding="14dp"
+    android:layout_marginBottom="12dp">
+
+    <TextView android:text="🔍  WEBSITE DETAILS"
+        android:textColor="#FF00F0FF" android:textSize="12sp" android:textStyle="bold"
+        android:letterSpacing="0.15" android:layout_marginBottom="8dp"
+        android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+
+    <TextView android:id="@+id/dSiteName" android:text="Website: —"
+        android:textColor="#FFFFFF" android:textSize="12sp" android:lineSpacingExtra="3dp"
+        android:paddingTop="3dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+    <TextView android:id="@+id/dTitle" android:text="Title: —"
+        android:textColor="#D0FFFFFF" android:textSize="12sp" android:lineSpacingExtra="3dp"
+        android:paddingTop="3dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+    <TextView android:id="@+id/dDescription" android:text="Description: —"
+        android:textColor="#D0FFFFFF" android:textSize="12sp" android:lineSpacingExtra="3dp"
+        android:paddingTop="3dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+    <TextView android:id="@+id/dAuthor" android:text="Author: —"
+        android:textColor="#D0FFFFFF" android:textSize="12sp" android:paddingTop="3dp"
+        android:layout_width="match_parent" android:layout_height="wrap_content"/>
+    <TextView android:id="@+id/dKeywords" android:text="Keywords: —"
+        android:textColor="#D0FFFFFF" android:textSize="12sp" android:lineSpacingExtra="3dp"
+        android:paddingTop="3dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+    <TextView android:id="@+id/dServer" android:text="Server: —"
+        android:textColor="#B0C4FF" android:textSize="12sp" android:paddingTop="3dp"
+        android:layout_width="match_parent" android:layout_height="wrap_content"/>
+    <TextView android:id="@+id/dIp" android:text="IP: —"
+        android:textColor="#B0C4FF" android:textSize="12sp" android:paddingTop="3dp"
+        android:layout_width="match_parent" android:layout_height="wrap_content"/>
+    <TextView android:id="@+id/dProtocol" android:text="Protocol: —"
+        android:textColor="#B0C4FF" android:textSize="12sp" android:paddingTop="3dp"
+        android:layout_width="match_parent" android:layout_height="wrap_content"/>
+    <TextView android:id="@+id/dContentType" android:text="Content-Type: —"
+        android:textColor="#B0C4FF" android:textSize="12sp" android:paddingTop="3dp"
+        android:layout_width="match_parent" android:layout_height="wrap_content"/>
+    <TextView android:id="@+id/dResponse" android:text="Response: —"
+        android:textColor="#FF00E676" android:textSize="12sp" android:paddingTop="3dp"
+        android:layout_width="match_parent" android:layout_height="wrap_content"/>
+    <TextView android:id="@+id/dHttpCode" android:text="HTTP: —"
+        android:textColor="#FF00E676" android:textSize="12sp" android:paddingTop="3dp"
+        android:layout_width="match_parent" android:layout_height="wrap_content"/>
+    <TextView android:id="@+id/dContentLength" android:text="Size: —"
+        android:textColor="#FF00E676" android:textSize="12sp" android:paddingTop="3dp"
+        android:layout_width="match_parent" android:layout_height="wrap_content"/>
+    <TextView android:id="@+id/dH1" android:text="H1: —"
+        android:textColor="#D0FFFFFF" android:textSize="12sp" android:lineSpacingExtra="3dp"
+        android:paddingTop="3dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+</LinearLayout>
