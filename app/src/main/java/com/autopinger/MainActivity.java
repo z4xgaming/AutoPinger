@@ -314,16 +314,21 @@ public class MainActivity extends AppCompatActivity {
         tvStatus.setText("🚀 Starting service...");
 
         // 🖤 ASCII BLACK PROGRESS ANIMATION
-        animateAsciiProgress(() -> {
-            Intent svc = new Intent(MainActivity.this, AutoPingerService.class);
-            svc.putExtra("url", url);
-            svc.putExtra("interval", intervalMs);
-            svc.putExtra("duration", durationMs);
+        final String fUrl = url;
+        final long fInterval = intervalMs;
+        final long fDuration = durationMs;
+        animateAsciiProgress(new Runnable() {
+            @Override public void run() {
+                Intent svc = new Intent(MainActivity.this, AutoPingerService.class);
+                svc.putExtra("url", fUrl);
+                svc.putExtra("interval", fInterval);
+                svc.putExtra("duration", fDuration);
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(svc);
-            } else {
-                startService(svc);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    startForegroundService(svc);
+                } else {
+                    startService(svc);
+                }
             }
         });
     }
