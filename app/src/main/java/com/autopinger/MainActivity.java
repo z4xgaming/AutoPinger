@@ -456,4 +456,54 @@ public class MainActivity extends AppCompatActivity {
         try { if (networkCallback != null) cm.unregisterNetworkCallback(networkCallback); } catch (Exception ignored) {}
         super.onDestroy();
     }
+
+    private void animateAsciiProgress(final Runnable onComplete) {
+        if (tvAsciiProgress == null) { if (onComplete != null) onComplete.run(); return; }
+        tvAsciiProgress.setVisibility(View.VISIBLE);
+        if (tvProgressMsg != null) tvProgressMsg.setVisibility(View.VISIBLE);
+        tvAsciiProgress.setBackgroundResource(R.drawable.ascii_progress_bg);
+
+        final int TOTAL_BLOCKS = 10;
+        final long STEP_MS = 25L;
+
+        final int[] step = {0};
+        final Handler h = new Handler(Looper.getMainLooper());
+
+        Runnable tick = new Runnable() {
+            @Override public void run() {
+                int pct = step[0];
+                int filled = (pct * TOTAL_BLOCKS) / 100;
+                StringBuilder bar = new StringBuilder("[");
+                for (int i = 0; i < TOTAL_BLOCKS; i++) {
+                    bar.append(i < filled ? "\u2593" : "\u2591");
+                }
+                bar.append("]  ").append(pct).append("%");
+                tvAsciiProgress.setText(bar.toString());
+
+                String msg;
+                if (pct < 20) msg = "Initializing engine...";
+                else if (pct < 40) msg = "Connecting to websites...";
+                else if (pct < 60) msg = "Pinging servers...";
+                else if (pct < 80) msg = "Analyzing responses...";
+                else if (pct < 99) msg = "Going live...";
+                else msg = "ALL SYSTEMS LIVE!";
+                if (tvProgressMsg != null) tvProgressMsg.setText(msg);
+
+                if (step[0] >= 100) {
+                    h.postDelayed(new Runnable() {
+                        @Override public void run() {
+                            tvAsciiProgress.setVisibility(View.GONE);
+                            if (tvProgressMsg != null) tvProgressMsg.setVisibility(View.GONE);
+                            if (onComplete != null) onComplete.run();
+                        }
+                    }, 700);
+                    return;
+                }
+                step[0] += 2;
+                h.postDelayed(this, STEP_MS);
+            }
+        };
+        h.post(tick);
+    }
+
 }
