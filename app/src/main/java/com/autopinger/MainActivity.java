@@ -38,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
     Spinner spDuration, spInterval;
     RainbowLoaderView loader;
     LinearLayout tgSection, tgToggle, rewardsBar;
+    Switch batterySwitch;
     TextView tvCoinsSmall;
 
     Handler handler = new Handler(Looper.getMainLooper());
@@ -92,6 +93,13 @@ public class MainActivity extends AppCompatActivity {
         tgSection = findViewById(R.id.tgSection);
         tgToggle = findViewById(R.id.tgToggle);
         rewardsBar = findViewById(R.id.btnRewardsBar);
+        batterySwitch = findViewById(R.id.batterySwitch);
+        batterySwitch.setChecked(prefs.getBoolean("battery_saver", true));
+        batterySwitch.setOnCheckedChangeListener((btn, on) -> {
+            prefs.edit().putBoolean("battery_saver", on).apply();
+            AutoPingerService.batterySaverMode = on;
+            Toast.makeText(this, on ? "🔋 Battery saver ON" : "⚡ Performance mode", Toast.LENGTH_SHORT).show();
+        });
         tvCoinsSmall = findViewById(R.id.tvCoinsSmall);
         rewardsBar.setOnClickListener(v ->
             startActivityForResult(new Intent(MainActivity.this, RewardsActivity.class), 500));
