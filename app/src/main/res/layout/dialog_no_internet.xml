@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/dialog_bg"
+    android:padding="26dp"
+    android:gravity="center">
+
+    <TextView
+        android:text="📴"
+        android:textSize="56sp"
+        android:layout_marginBottom="10dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+    <TextView
+        android:text="आपका Internet बंद है"
+        android:textColor="#FFFFFF"
+        android:textSize="21sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.05"
+        android:layout_marginBottom="8dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+    <TextView
+        android:text="कृपया अपना Internet चालू कीजिए"
+        android:textColor="#FFB0C4FF"
+        android:textSize="14sp"
+        android:gravity="center"
+        android:layout_marginBottom="18dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#30FFFFFF"
+        android:layout_marginBottom="16dp"/>
+
+    <TextView
+        android:text="⚡ Internet चालू होते ही\nApp अपने आप resume हो जाएगी"
+        android:textColor="#FF00F0FF"
+        android:textSize="13sp"
+        android:gravity="center"
+        android:lineSpacingExtra="4dp"
+        android:padding="12dp"
+        android:background="@drawable/card_bg"
+        android:layout_marginBottom="18dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <ProgressBar
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:indeterminateTint="#FF2E93"
+        android:layout_marginBottom="14dp"/>
+
+    <TextView
+        android:text="इंतज़ार कर रहे हैं..."
+        android:textColor="#90FFFFFF"
+        android:textSize="12sp"
+        android:letterSpacing="0.1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+</LinearLayout>

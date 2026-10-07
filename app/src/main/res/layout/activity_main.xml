@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_gradient"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="22dp"
+        android:gravity="center_horizontal">
+
+        <TextView
+            android:text="🚀 AUTO PINGER"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:letterSpacing="0.15"
+            android:layout_marginTop="20dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            android:text="Premium Website Pinger"
+            android:textSize="13sp"
+            android:textColor="#B0FFFFFF"
+            android:letterSpacing="0.1"
+            android:layout_marginBottom="24dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <com.autopinger.RainbowLoaderView
+            android:id="@+id/loader"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:layout_marginBottom="20dp"/>
+
+        <TextView
+            android:id="@+id/tvStatus"
+            android:text="Ready to start"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:gravity="center"
+            android:layout_marginBottom="20dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <EditText
+            android:id="@+id/etUrl"
+            android:hint="https://example.com"
+            android:textColorHint="#60FFFFFF"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:padding="16dp"
+            android:background="@drawable/input_bg"
+            android:inputType="textUri"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="14dp"/>
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp">
+
+            <Button
+                android:id="@+id/btnStart"
+                android:text="▶ START"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:background="@drawable/btn_gradient"
+                android:layout_weight="1"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_marginEnd="6dp"/>
+
+            <Button
+                android:id="@+id/btnStop"
+                android:text="■ STOP"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:background="@drawable/btn_stop"
+                android:layout_weight="1"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_marginStart="6dp"/>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvInfo"
+            android:text="URL dalo aur START dabao.\nHar 5 minute mein automatic ping hoga.\nInternet band hone par auto-detect karega."
+            android:textColor="#D0FFFFFF"
+            android:textSize="13sp"
+            android:lineSpacingExtra="5dp"
+            android:padding="16dp"
+            android:background="@drawable/card_bg"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+    </LinearLayout>
+</ScrollView>
