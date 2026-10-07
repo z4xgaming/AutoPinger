@@ -12,7 +12,8 @@ public class RainbowLoaderView extends View {
     private float rotation = 0f;
     private ValueAnimator animator;
     private RectF oval = new RectF();
-    private final float STROKE = 26f;
+    private final float STROKE = 22f;
+    private boolean loading = false;
 
     private final int[] COLORS = {
         0xFFFF2E93, 0xFFFF6B00, 0xFFFFEB00, 0xFF00F0A8,
@@ -30,13 +31,13 @@ public class RainbowLoaderView extends View {
 
         glowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         glowPaint.setStyle(Paint.Style.STROKE);
-        glowPaint.setStrokeWidth(STROKE + 18);
+        glowPaint.setStrokeWidth(STROKE + 14);
         glowPaint.setStrokeCap(Paint.Cap.ROUND);
-        glowPaint.setAlpha(90);
+        glowPaint.setAlpha(80);
 
         bgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         bgPaint.setStyle(Paint.Style.STROKE);
-        bgPaint.setStrokeWidth(4f);
+        bgPaint.setStrokeWidth(3f);
         bgPaint.setColor(0x25FFFFFF);
     }
 
@@ -45,7 +46,7 @@ public class RainbowLoaderView extends View {
         super.onDraw(canvas);
         float cx = getWidth() / 2f;
         float cy = getHeight() / 2f;
-        float r = Math.min(cx, cy) - STROKE;
+        float r = Math.min(cx, cy) - STROKE - 6;
         oval.set(cx - r, cy - r, cx + r, cy + r);
 
         canvas.drawArc(oval, 0, 360, false, bgPaint);
@@ -61,21 +62,23 @@ public class RainbowLoaderView extends View {
         canvas.drawArc(oval, 0, 280, false, ringPaint);
     }
 
-    public void setLoading(boolean loading) {
-        if (loading) {
-            if (animator != null) animator.cancel();
-            animator = ValueAnimator.ofFloat(0f, 360f);
-            animator.setDuration(1800);
-            animator.setRepeatCount(ValueAnimator.INFINITE);
-            animator.setInterpolator(new LinearInterpolator());
-            animator.addUpdateListener(a -> {
-                rotation = (float) a.getAnimatedValue();
-                invalidate();
-            });
-            animator.start();
+    public void setLoading(boolean load) {
+        if (load == loading) return; // Prevents restart glitch
+        loading = load;
+        if (load) {
+            if (animator == null) {
+                animator = ValueAnimator.ofFloat(0f, 360f);
+                animator.setDuration(1800);
+                animator.setRepeatCount(ValueAnimator.INFINITE);
+                animator.setInterpolator(new LinearInterpolator());
+                animator.addUpdateListener(a -> {
+                    rotation = (float) a.getAnimatedValue();
+                    invalidate();
+                });
+            }
+            if (!animator.isRunning()) animator.start();
         } else {
-            if (animator != null) animator.cancel();
-            invalidate();
+            if (animator != null && animator.isRunning()) animator.cancel();
         }
     }
 }
