@@ -12,7 +12,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Setup Java 17
@@ -21,51 +21,55 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Setup Android SDK (auto-accept licenses)
+        uses: android-actions/setup-android@v4
         with:
-          packages: 'tools platform-tools platforms;android-34 build-tools;34.0.0'
-          log-accepted-android-sdk-licenses: false
+          accept-android-sdk-licenses: true
 
-      - name: Accept Android SDK Licenses
+      - name: Install Required SDK Packages
         run: |
+          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
           yes | sdkmanager --licenses || true
-          sdkmanager "platforms;android-34" "build-tools;34.0.0" "platform-tools" || true
 
-      - name: Setup Gradle
+      - name: Setup Gradle 8.5
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.5'
-          cache-disabled: true
 
       - name: Build Debug APK
         run: gradle assembleDebug --no-daemon --stacktrace
 
-      - name: Rename APK
+      - name: Prepare APK
         run: |
           mkdir -p output
           cp app/build/outputs/apk/debug/app-debug.apk output/AutoPinger.apk
           ls -lh output/
 
-      - name: Create Release
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AutoPinger-APK
+          path: output/AutoPinger.apk
+          retention-days: 30
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}
           name: AutoPinger v1.0.${{ github.run_number }}
           body: |
             🚀 AutoPinger Premium APK
-            - Har 5 min mein auto ping
-            - Internet off popup
-            - Auto resume
+            
+            Features:
+            - Har 5 minute mein auto ping
+            - Internet off popup with auto-resume
+            - Premium rainbow loader animation
+            - Beautiful dark gradient UI
+            
+            Direct download link:
+            https://github.com/z4xgaming/AutoPinger/releases/latest/download/AutoPinger.apk
           files: output/AutoPinger.apk
           draft: false
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: AutoPinger-APK
-          path: output/AutoPinger.apk
-          retention-days: 30
