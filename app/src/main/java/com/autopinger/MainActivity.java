@@ -39,6 +39,7 @@ public class MainActivity extends AppCompatActivity {
     RainbowLoaderView loader;
     LinearLayout tgSection, tgToggle, rewardsBar;
     Switch batterySwitch;
+    TextView tvAsciiProgress, tvProgressMsg;
     TextView tvCoinsSmall;
 
     Handler handler = new Handler(Looper.getMainLooper());
@@ -94,6 +95,8 @@ public class MainActivity extends AppCompatActivity {
         tgToggle = findViewById(R.id.tgToggle);
         rewardsBar = findViewById(R.id.btnRewardsBar);
         batterySwitch = findViewById(R.id.batterySwitch);
+        tvAsciiProgress = findViewById(R.id.tvAsciiProgress);
+        tvProgressMsg = findViewById(R.id.tvProgressMsg);
         batterySwitch.setChecked(prefs.getBoolean("battery_saver", true));
         batterySwitch.setOnCheckedChangeListener((btn, on) -> {
             prefs.edit().putBoolean("battery_saver", on).apply();
@@ -310,16 +313,19 @@ public class MainActivity extends AppCompatActivity {
         loader.setLoading(true);
         tvStatus.setText("🚀 Starting service...");
 
-        Intent svc = new Intent(this, AutoPingerService.class);
-        svc.putExtra("url", url);
-        svc.putExtra("interval", intervalMs);
-        svc.putExtra("duration", durationMs);
+        // 🖤 ASCII BLACK PROGRESS ANIMATION
+        animateAsciiProgress(() -> {
+            Intent svc = new Intent(MainActivity.this, AutoPingerService.class);
+            svc.putExtra("url", url);
+            svc.putExtra("interval", intervalMs);
+            svc.putExtra("duration", durationMs);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(svc);
-        } else {
-            startService(svc);
-        }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(svc);
+            } else {
+                startService(svc);
+            }
+        });
     }
 
     private void stopPinging() {
@@ -336,6 +342,8 @@ public class MainActivity extends AppCompatActivity {
         tvStatus.setText("⏹️ Stopped");
         setLiveStatus(false);
         tvNextPing.setText("Next ping: —");
+        if (tvAsciiProgress != null) tvAsciiProgress.setVisibility(View.GONE);
+        if (tvProgressMsg != null) tvProgressMsg.setVisibility(View.GONE);
     }
 
     private void updateCoinsUI() {
