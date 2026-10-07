@@ -26,6 +26,11 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".RewardsActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"/>
+
         <service
             android:name=".AutoPingerService"
             android:enabled="true"

@@ -37,7 +37,8 @@ public class MainActivity extends AppCompatActivity {
     View liveDot;
     Spinner spDuration, spInterval;
     RainbowLoaderView loader;
-    LinearLayout tgSection, tgToggle;
+    LinearLayout tgSection, tgToggle, rewardsBar;
+    TextView tvCoinsSmall;
 
     Handler handler = new Handler(Looper.getMainLooper());
     ConnectivityManager cm;
@@ -90,6 +91,10 @@ public class MainActivity extends AppCompatActivity {
         loader = findViewById(R.id.loader);
         tgSection = findViewById(R.id.tgSection);
         tgToggle = findViewById(R.id.tgToggle);
+        rewardsBar = findViewById(R.id.btnRewardsBar);
+        tvCoinsSmall = findViewById(R.id.tvCoinsSmall);
+        rewardsBar.setOnClickListener(v ->
+            startActivityForResult(new Intent(MainActivity.this, RewardsActivity.class), 500));
 
         dSiteName = findViewById(R.id.dSiteName);
         dTitle = findViewById(R.id.dTitle);
@@ -139,6 +144,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (!isInternetAvailable()) showInternetDialog();
         handler.post(uiUpdater);
+        checkForUpdates();
     }
 
     private void askBatteryOptimization() {
@@ -324,7 +330,12 @@ public class MainActivity extends AppCompatActivity {
         tvNextPing.setText("Next ping: —");
     }
 
+    private void updateCoinsUI() {
+        if (tvCoinsSmall != null) tvCoinsSmall.setText("" + WalletManager.getCoins(this));
+    }
+
     private void updateFromService() {
+        updateCoinsUI();
         if (AutoPingerService.isRunning) {
             int p = AutoPingerService.pingCount;
             int s = AutoPingerService.successCount;
@@ -390,6 +401,36 @@ public class MainActivity extends AppCompatActivity {
             tvLiveStatus.setText("● OFFLINE");
             tvLiveStatus.setTextColor(0xFFFF1744);
         }
+    }
+
+    @Override
+    protected void onActivityResult(int req, int res, Intent data) {
+        super.onActivityResult(req, res, data);
+        if (req == 500 && res == RESULT_OK && data != null) {
+            int mins = data.getIntExtra("redeem_minutes", 0);
+            if (mins > 0) {
+                prefs.edit().putLong("bonus_minutes",
+                        prefs.getLong("bonus_minutes", 0) + mins).apply();
+                Toast.makeText(this, "🎁 " + mins + " min added to your bonus!",
+                        Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
+    private void checkForUpdates() {
+        UpdateChecker.check(this, (avail, ver, url, log) -> {
+            if (avail && url != null) {
+                new AlertDialog.Builder(this)
+                        .setTitle("🚀 Update Available")
+                        .setMessage("v" + ver + " ready\n\n" +
+                                (log != null && log.length() > 250 ? log.substring(0, 250) + "..." : log))
+                        .setPositiveButton("Download", (d, w) -> {
+                            try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); }
+                            catch (Exception e) { Toast.makeText(this, "Browser missing", Toast.LENGTH_SHORT).show(); }
+                        })
+                        .setNegativeButton("Later", null).show();
+            }
+        });
     }
 
     @Override
