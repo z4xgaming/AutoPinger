@@ -1,4 +1,5 @@
 name: Build APK
+
 on:
   push:
     branches: [ main ]
@@ -11,33 +12,52 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v4
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - uses: android-actions/setup-android@v3
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
 
       - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.5'
+          cache-disabled: true
+
+      - name: Build Debug APK
+        run: gradle assembleDebug --no-daemon --stacktrace
+
+      - name: Rename APK
         run: |
-          chmod +x gradlew 2>/dev/null || true
-          wget -q https://services.gradle.org/distributions/gradle-8.5-bin.zip
-          unzip -q gradle-8.5-bin.zip
-          echo "$PWD/gradle-8.5/bin" >> $GITHUB_PATH
-
-      - name: Build APK
-        run: gradle assembleDebug --no-daemon
-
-      - name: Rename
-        run: cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/AutoPinger.apk
+          mkdir -p output
+          cp app/build/outputs/apk/debug/app-debug.apk output/AutoPinger.apk
+          ls -lh output/
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}
           name: AutoPinger v1.0.${{ github.run_number }}
-          files: app/build/outputs/apk/debug/AutoPinger.apk
+          body: |
+            🚀 AutoPinger Premium APK
+            - Har 5 min mein auto ping
+            - Internet off popup  
+            - Auto resume
+          files: output/AutoPinger.apk
+          draft: false
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AutoPinger-APK
+          path: output/AutoPinger.apk
+          retention-days: 30
