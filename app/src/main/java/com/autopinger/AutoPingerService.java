@@ -260,18 +260,14 @@ public class AutoPingerService extends Service {
         try {
             Matcher m = Pattern.compile(
                     "<meta[^>]+property=[\"']" + prop + "[\"'][^>]+content=[\"']([^\"']*)[\"']",
-                    Pattern.CASE_INSENSITIVE).start(html).toMatchResult() != null
-                    ? Pattern.compile(
-                    "<meta[^>]+property=[\"']" + prop + "[\"'][^>]+content=[\"']([^\"']*)[\"']",
-                    Pattern.CASE_INSENSITIVE).matcher(html)
-                    : Pattern.compile("$^").matcher(html);
+                    Pattern.CASE_INSENSITIVE).matcher(html);
             if (m.find()) return m.group(1).trim();
             m = Pattern.compile(
                     "<meta[^>]+content=[\"']([^\"']*)[\"'][^>]+property=[\"']" + prop + "[\"']",
                     Pattern.CASE_INSENSITIVE).matcher(html);
             if (m.find()) return m.group(1).trim();
         } catch (Exception ignored) {}
-        return "—";
+        return "\u2014";
     }
 
     private void stopSelfPinging(String reason) {
