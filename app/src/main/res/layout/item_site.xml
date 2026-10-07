@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:orientation="vertical" android:background="@drawable/black_gold_card"
+    android:padding="14dp">
+
+    <!-- TOP ROW: Dot + Name + Menu -->
+    <LinearLayout android:orientation="horizontal" android:gravity="center_vertical"
+        android:layout_width="match_parent" android:layout_height="wrap_content">
+
+        <View android:id="@+id/dot" android:layout_width="16dp" android:layout_height="16dp"
+            android:background="@drawable/dot_gray" android:layout_marginEnd="10dp"/>
+
+        <TextView android:id="@+id/tvSiteName" android:text="site.com"
+            android:textColor="#FFFFFF" android:textSize="14sp" android:textStyle="bold"
+            android:maxLines="1" android:ellipsize="middle"
+            android:layout_weight="1" android:layout_width="0dp" android:layout_height="wrap_content"/>
+
+        <TextView android:id="@+id/tvStatusBadge" android:text="NEW"
+            android:textColor="#90FFFFFF" android:textSize="10sp" android:textStyle="bold"
+            android:paddingHorizontal="8dp" android:paddingVertical="3dp"
+            android:background="@drawable/input_bg" android:letterSpacing="0.1"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+    </LinearLayout>
+
+    <!-- STATS ROW -->
+    <LinearLayout android:orientation="horizontal" android:layout_marginTop="8dp"
+        android:layout_width="match_parent" android:layout_height="wrap_content">
+
+        <LinearLayout android:orientation="vertical" android:layout_weight="1"
+            android:layout_width="0dp" android:layout_height="wrap_content">
+            <TextView android:text="HTTP" android:textColor="#60FFD700" android:textSize="9sp"
+                android:letterSpacing="0.15" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <TextView android:id="@+id/tvHttp" android:text="—"
+                android:textColor="#FFD700" android:textSize="13sp" android:textStyle="bold"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        </LinearLayout>
+
+        <LinearLayout android:orientation="vertical" android:layout_weight="1"
+            android:layout_width="0dp" android:layout_height="wrap_content">
+            <TextView android:text="UPTIME" android:textColor="#60FFD700" android:textSize="9sp"
+                android:letterSpacing="0.15" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <TextView android:id="@+id/tvUptime" android:text="0%"
+                android:textColor="#FF00E676" android:textSize="13sp" android:textStyle="bold"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        </LinearLayout>
+
+        <LinearLayout android:orientation="vertical" android:layout_weight="1"
+            android:layout_width="0dp" android:layout_height="wrap_content">
+            <TextView android:text="SPEED" android:textColor="#60FFD700" android:textSize="9sp"
+                android:letterSpacing="0.15" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <TextView android:id="@+id/tvSpeed" android:text="— ms"
+                android:textColor="#FF00F0FF" android:textSize="13sp" android:textStyle="bold"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        </LinearLayout>
+
+        <LinearLayout android:orientation="vertical" android:layout_weight="1"
+            android:layout_width="0dp" android:layout_height="wrap_content">
+            <TextView android:text="PINGS" android:textColor="#60FFD700" android:textSize="9sp"
+                android:letterSpacing="0.15" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <TextView android:id="@+id/tvPings" android:text="0"
+                android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- ACTION BUTTONS -->
+    <LinearLayout android:orientation="horizontal" android:layout_marginTop="10dp"
+        android:layout_width="match_parent" android:layout_height="wrap_content">
+
+        <Button android:id="@+id/btnMove"
+            android:text="📜 Move to History"
+            android:textColor="#000000" android:textSize="11sp" android:textStyle="bold"
+            android:background="@drawable/coin_gold" android:minWidth="0dp"
+            android:layout_weight="1" android:layout_width="0dp" android:layout_height="40dp"
+            android:layout_marginEnd="6dp"/>
+
+        <Button android:id="@+id/btnDelete" android:text="🗑️"
+            android:textColor="#FFFFFF" android:textSize="14sp"
+            android:background="@drawable/btn_stop" android:minWidth="0dp"
+            android:paddingHorizontal="14dp"
+            android:layout_width="wrap_content" android:layout_height="40dp"/>
+    </LinearLayout>
+</LinearLayout>
