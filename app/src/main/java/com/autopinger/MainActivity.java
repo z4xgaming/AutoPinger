@@ -37,7 +37,8 @@ public class MainActivity extends AppCompatActivity {
     View liveDot;
     Spinner spDuration, spInterval;
     RainbowLoaderView loader;
-    LinearLayout tgSection, tgToggle, rewardsBar;
+    LinearLayout tgSection, tgToggle, rewardsBar, btnShowLogs;
+    TextView tvLogCount;
     Switch batterySwitch;
     TextView tvAsciiProgress, tvProgressMsg;
     TextView tvCoinsSmall;
@@ -94,6 +95,9 @@ public class MainActivity extends AppCompatActivity {
         tgSection = findViewById(R.id.tgSection);
         tgToggle = findViewById(R.id.tgToggle);
         rewardsBar = findViewById(R.id.btnRewardsBar);
+        btnShowLogs = findViewById(R.id.btnShowLogs);
+        tvLogCount = findViewById(R.id.tvLogCount);
+        btnShowLogs.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, LogsActivity.class)));
         batterySwitch = findViewById(R.id.batterySwitch);
         tvAsciiProgress = findViewById(R.id.tvAsciiProgress);
         tvProgressMsg = findViewById(R.id.tvProgressMsg);
@@ -277,60 +281,87 @@ public class MainActivity extends AppCompatActivity {
 
     private void startPinging() {
         String url = etUrl.getText().toString().trim();
-        if (url.isEmpty()) { tvStatus.setText("⚠️ URL dalo bhai!"); return; }
+        if (url.isEmpty()) {
+            Toast.makeText(this, "Pehle URL dalo", Toast.LENGTH_SHORT).show();
+            return;
+        }
         if (!url.startsWith("http://") && !url.startsWith("https://")) url = "https://" + url;
 
         int durIdx = spDuration.getSelectedItemPosition();
         int intIdx = spInterval.getSelectedItemPosition();
+        if (durIdx < 0) durIdx = 0;
+        if (intIdx < 0) intIdx = 0;
 
-        long durationMin = DURATION_MIN[durIdx];
-        long intervalMs = INTERVAL_MIN[intIdx] * 60 * 1000L;
-        long durationMs = durationMin * 60 * 1000L;
+        int cost = DURATION_COST[durIdx];
+        int balance = WalletManager.getCoins(this);
 
-        prefs.edit()
-                .putString("url", url)
-                .putString("tg_token", etTgToken.getText().toString().trim())
-                .putString("tg_chat", etTgChat.getText().toString().trim())
-                .putInt("duration_idx", durIdx)
-                .putInt("interval_idx", intIdx)
-                .putLong("interval_ms", intervalMs)
-                .putLong("duration_ms", durationMs)
-                .putBoolean("was_running", true)
-                .apply();
+        if (balance < cost) {
+            showInsufficientCoins(cost, balance);
+            return;
+        }
 
-        addToHistory(url);
+        final String finalUrl = url;
+        final int finalDurIdx = durIdx;
+        final int finalIntIdx = intIdx;
+        final int finalCost = cost;
 
-        try {
-            InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-            imm.hideSoftInputFromWindow(etUrl.getWindowToken(), 0);
-        } catch (Exception ignored) {}
+        new AlertDialog.Builder(this)
+                .setTitle("Confirm Purchase")
+                .setMessage("Duration: " + DURATION_LABELS[finalDurIdx] +
+                        "\nInterval: " + INTERVAL_LABELS[finalIntIdx] +
+                        "\n\nCost: " + finalCost + " coins" +
+                        "\nBalance after: " + (balance - finalCost) + " coins")
+                .setPositiveButton("Pay & Start", (d, w) -> {
+                    if (!WalletManager.spendCoins(MainActivity.this, finalCost)) {
+                        Toast.makeText(MainActivity.this, "Coin deduction failed", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
 
-        btnStart.setEnabled(false);
-        btnStop.setEnabled(true);
-        etUrl.setEnabled(false);
-        spDuration.setEnabled(false);
-        spInterval.setEnabled(false);
-        loader.setLoading(true);
-        tvStatus.setText("🚀 Starting service...");
+                    Toast.makeText(MainActivity.this,
+                            "Paid " + finalCost + " coins | Balance: " + WalletManager.getCoins(MainActivity.this),
+                            Toast.LENGTH_LONG).show();
 
-        // 🖤 ASCII BLACK PROGRESS ANIMATION
-        final String fUrl = url;
-        final long fInterval = intervalMs;
-        final long fDuration = durationMs;
-        animateAsciiProgress(new Runnable() {
-            @Override public void run() {
-                Intent svc = new Intent(MainActivity.this, AutoPingerService.class);
-                svc.putExtra("url", fUrl);
-                svc.putExtra("interval", fInterval);
-                svc.putExtra("duration", fDuration);
+                    prefs.edit()
+                            .putString("url", finalUrl)
+                            .putString("tg_token", etTgToken.getText().toString().trim())
+                            .putString("tg_chat", etTgChat.getText().toString().trim())
+                            .putInt("duration_idx", finalDurIdx)
+                            .putInt("interval_idx", finalIntIdx)
+                            .apply();
+                    addToHistory(finalUrl);
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    startForegroundService(svc);
-                } else {
-                    startService(svc);
-                }
-            }
-        });
+                    try {
+                        InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+                        imm.hideSoftInputFromWindow(etUrl.getWindowToken(), 0);
+                    } catch (Exception ignored) {}
+
+                    btnStart.setEnabled(false);
+                    btnStop.setEnabled(true);
+                    etUrl.setEnabled(false);
+                    spDuration.setEnabled(false);
+                    spInterval.setEnabled(false);
+                    loader.setLoading(true);
+                    tvStatus.setText("Starting service...");
+
+                    final long intervalMs = INTERVAL_MIN[finalIntIdx] * 60 * 1000L;
+                    final long durationMs = DURATION_MIN[finalDurIdx] * 60 * 1000L;
+
+                    animateAsciiProgress(new Runnable() {
+                        @Override public void run() {
+                            Intent svc = new Intent(MainActivity.this, AutoPingerService.class);
+                            svc.putExtra("url", finalUrl);
+                            svc.putExtra("interval", intervalMs);
+                            svc.putExtra("duration", durationMs);
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                startForegroundService(svc);
+                            } else {
+                                startService(svc);
+                            }
+                        }
+                    });
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     private void stopPinging() {

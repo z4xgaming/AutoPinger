@@ -7,12 +7,10 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
-import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
@@ -27,60 +25,65 @@ import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class AutoPingerService extends Service {
     public static final String CHANNEL_ID = "ap_silent";
     public static final int NOTIF_ID = 1001;
+    public static final int MAX_LOG_LINES = 100;
 
     public static volatile boolean isRunning = false;
     public static volatile int pingCount = 0;
     public static volatile int successCount = 0;
-    public static volatile String lastStatus = "Starting...";
+    public static volatile String lastStatus = "Ready";
     public static volatile long nextPingTime = 0;
     public static volatile long expiryTime = 0;
-    public static volatile boolean batterySaverMode = true;
 
     public static volatile String siteName = "—";
     public static volatile String siteTitle = "—";
     public static volatile String siteDescription = "—";
-    public static volatile String siteAuthor = "—";
-    public static volatile String siteKeywords = "—";
     public static volatile String siteServer = "—";
     public static volatile String siteIp = "—";
     public static volatile String siteProtocol = "—";
-    public static volatile String siteContentType = "—";
-    public static volatile String siteH1 = "—";
     public static volatile long siteResponseMs = 0;
     public static volatile int siteCode = 0;
     public static volatile long siteContentLength = 0;
+    public static volatile String siteHttpVersion = "—";
+
+    public static final List<String> logs = new ArrayList<>();
 
     Handler handler = new Handler(Looper.getMainLooper());
     ConnectivityManager cm;
     PowerManager.WakeLock wakeLock;
     String currentUrl = "";
     long BASE_INTERVAL_MS = 5 * 60 * 1000L;
-    long INTERVAL_MS = 5 * 60 * 1000L;
     long DURATION_MS = 0;
-    long consecutiveFails = 0;
+    Random random = new Random();
+    SimpleDateFormat timeFmt = new SimpleDateFormat("HH:mm:ss", Locale.US);
 
     Runnable pingTask = new Runnable() {
         @Override
         public void run() {
             if (!isRunning) return;
             if (expiryTime > 0 && System.currentTimeMillis() >= expiryTime) {
-                stopSelfPinging("⏰ Duration khatam");
+                stopSelfPinging("Duration khatam");
                 return;
             }
             if (!isInternetAvailable()) {
-                lastStatus = "Internet off — waiting...";
+                lastStatus = "Internet off — waiting";
+                addLog("Internet off — waiting 30s");
                 updateNotification();
                 handler.postDelayed(this, 30000);
                 return;
             }
-            lastStatus = "Pinging...";
-            updateNotification();
+            lastStatus = "Sending request...";
             doPing();
         }
     };
@@ -100,31 +103,37 @@ public class AutoPingerService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent != null) {
-            currentUrl = intent.getStringExtra("url");
-            BASE_INTERVAL_MS = intent.getLongExtra("interval", 5 * 60 * 1000L);
-            INTERVAL_MS = BASE_INTERVAL_MS;
-            DURATION_MS = intent.getLongExtra("duration", 0);
+            String url = intent.getStringExtra("url");
+            if (url != null) {
+                currentUrl = url;
+                BASE_INTERVAL_MS = intent.getLongExtra("interval", 5 * 60 * 1000L);
+                DURATION_MS = intent.getLongExtra("duration", 0);
 
-            SharedPreferences prefs = getSharedPreferences("autopinger", MODE_PRIVATE);
-            batterySaverMode = prefs.getBoolean("battery_saver", true);
-            prefs.edit()
-                    .putBoolean("was_running", true)
-                    .putLong("interval_ms", BASE_INTERVAL_MS)
-                    .putLong("duration_ms", DURATION_MS)
-                    .apply();
+                SharedPreferences prefs = getSharedPreferences("autopinger", MODE_PRIVATE);
+                prefs.edit()
+                        .putBoolean("was_running", true)
+                        .putLong("interval_ms", BASE_INTERVAL_MS)
+                        .putLong("duration_ms", DURATION_MS)
+                        .apply();
 
-            if (!isRunning) {
-                isRunning = true;
-                pingCount = 0;
-                successCount = 0;
-                consecutiveFails = 0;
-                expiryTime = DURATION_MS > 0 ? System.currentTimeMillis() + DURATION_MS : 0;
-                prefs.edit().putLong("expiry_time", expiryTime).apply();
-                startForeground(NOTIF_ID, buildNotification());
-                if (wakeLock != null) wakeLock.acquire();
-                handler.removeCallbacks(pingTask);
-                handler.post(pingTask);
-                sendTelegram("🚀 AutoPinger Started\n🌐 " + currentUrl);
+                if (!isRunning) {
+                    isRunning = true;
+                    pingCount = 0;
+                    successCount = 0;
+                    logs.clear();
+                    expiryTime = DURATION_MS > 0 ? System.currentTimeMillis() + DURATION_MS : 0;
+                    prefs.edit().putLong("expiry_time", expiryTime).apply();
+
+                    addLog("Service started");
+                    addLog("Target: " + currentUrl);
+                    addLog("Interval: " + (BASE_INTERVAL_MS / 60000) + " min");
+
+                    startForeground(NOTIF_ID, buildNotification());
+                    if (wakeLock != null) wakeLock.acquire();
+
+                    handler.postDelayed(pingTask, 5000 + random.nextInt(5000));
+                    sendTelegram("AutoPinger Started\nURL: " + currentUrl);
+                }
             }
         }
         return START_STICKY;
@@ -132,8 +141,8 @@ public class AutoPingerService extends Service {
 
     private void doPing() {
         new Thread(() -> {
-            String title = "—", desc = "—", author = "—", keywords = "—", h1 = "—";
-            String server = "—", contentType = "—", ip = "—";
+            String title = "—", desc = "—", server = "—", ip = "—";
+            String httpVer = "HTTP/1.1";
             long responseMs = 0, contentLength = 0;
             boolean ok = false;
             int code = 0;
@@ -143,32 +152,51 @@ public class AutoPingerService extends Service {
                 URL u = new URL(currentUrl);
                 siteNameVal = u.getHost().replace("www.", "");
                 boolean https = u.getProtocol().equalsIgnoreCase("https");
-                try { ip = InetAddress.getByName(u.getHost()).getHostAddress(); } catch (Exception ignored) {}
 
+                addLog("DNS lookup: " + u.getHost());
+                try {
+                    ip = InetAddress.getByName(u.getHost()).getHostAddress();
+                    addLog("Resolved IP: " + ip);
+                } catch (Exception e) {
+                    addLog("DNS slow, continuing...");
+                }
+
+                addLog("Opening connection...");
                 HttpURLConnection conn = (HttpURLConnection) u.openConnection();
                 conn.setRequestMethod("GET");
-                conn.setConnectTimeout(15000);
-                conn.setReadTimeout(15000);
+                conn.setConnectTimeout(20000);
+                conn.setReadTimeout(25000);
                 conn.setInstanceFollowRedirects(true);
-                conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Android) AutoPinger/1.0");
+                conn.setRequestProperty("User-Agent",
+                        "Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36");
+                conn.setRequestProperty("Accept", "text/html,application/xhtml+xml,*/*;q=0.8");
+                conn.setRequestProperty("Accept-Language", "en-US,en;q=0.9,hi;q=0.8");
+                conn.setRequestProperty("Connection", "keep-alive");
+                conn.setRequestProperty("Cache-Control", "no-cache");
 
                 long t1 = System.currentTimeMillis();
                 conn.connect();
+                addLog("Request sent — waiting response");
+
                 code = conn.getResponseCode();
                 responseMs = System.currentTimeMillis() - t1;
+                addLog("Response: HTTP " + code + " in " + responseMs + "ms");
 
                 server = conn.getHeaderField("Server");
                 if (server == null) server = "—";
-                contentType = conn.getHeaderField("Content-Type");
-                if (contentType == null) contentType = "—";
                 String cl = conn.getHeaderField("Content-Length");
                 try { if (cl != null) contentLength = Long.parseLong(cl); } catch (Exception ignored) {}
+
+                addLog("Server: " + server);
 
                 StringBuilder sb = new StringBuilder();
                 try {
                     BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
                     String line; int lines = 0;
-                    while ((line = br.readLine()) != null && lines < 150) { sb.append(line).append("\n"); lines++; }
+                    while ((line = br.readLine()) != null && lines < 200) {
+                        sb.append(line).append("\n");
+                        lines++;
+                    }
                     br.close();
                 } catch (Exception ignored) {}
                 conn.disconnect();
@@ -176,51 +204,40 @@ public class AutoPingerService extends Service {
                 String html = sb.toString();
                 title = extractTag(html, "<title[^>]*>(.*?)</title>");
                 desc = extractMeta(html, "description");
-                author = extractMeta(html, "author");
-                keywords = extractMeta(html, "keywords");
-                h1 = extractTag(html, "<h1[^>]*>(.*?)</h1>");
-
                 if (title.length() > 100) title = title.substring(0, 100) + "...";
-                if (desc.length() > 180) desc = desc.substring(0, 180) + "...";
-                if (keywords.length() > 120) keywords = keywords.substring(0, 120) + "...";
+                if (desc.length() > 200) desc = desc.substring(0, 200) + "...";
+
+                addLog("Title: " + (title.length() > 40 ? title.substring(0, 40) + "..." : title));
 
                 ok = code >= 200 && code < 400;
-                siteProtocol = https ? "HTTPS 🔒" : "HTTP ⚠️";
+                siteProtocol = https ? "HTTPS" : "HTTP";
             } catch (Exception ex) {
                 desc = "Error: " + ex.getMessage();
+                addLog("Error: " + ex.getMessage());
             }
 
             final boolean success = ok;
-            final String ft = title, fd = desc, fa = author, fk = keywords;
-            final String fh1 = h1, fs = server, fct = contentType, fip = ip;
+            final String ft = title, fd = desc, fs = server, fip = ip;
+            final String fhv = httpVer;
             final long frt = responseMs, fcl = contentLength;
             final int fc = code;
             final String fsn = siteNameVal;
 
             handler.post(() -> {
                 pingCount++;
-                if (success) { successCount++; consecutiveFails = 0; }
-                else consecutiveFails++;
+                if (success) successCount++;
 
                 siteName = fsn; siteTitle = ft; siteDescription = fd;
-                siteAuthor = fa; siteKeywords = fk; siteServer = fs;
-                siteIp = fip; siteContentType = fct; siteH1 = fh1;
+                siteServer = fs; siteIp = fip; siteHttpVersion = fhv;
                 siteResponseMs = frt; siteCode = fc; siteContentLength = fcl;
 
-                lastStatus = success ? "✅ Ping #" + pingCount + " OK" : "❌ Ping #" + pingCount + " Fail";
+                lastStatus = success ? "Ping #" + pingCount + " — HTTP " + fc : "Ping #" + pingCount + " failed";
 
-                // Smart battery saver — increase interval on repeated failures or slow response
-                if (batterySaverMode) {
-                    if (consecutiveFails >= 3) {
-                        INTERVAL_MS = Math.min(BASE_INTERVAL_MS * 3, 30 * 60 * 1000L);
-                    } else if (frt > 5000) {
-                        INTERVAL_MS = Math.min(BASE_INTERVAL_MS * 2, 15 * 60 * 1000L);
-                    } else {
-                        INTERVAL_MS = BASE_INTERVAL_MS;
-                    }
-                } else {
-                    INTERVAL_MS = BASE_INTERVAL_MS;
-                }
+                long jitter = (long) (BASE_INTERVAL_MS * 0.3);
+                long nextDelay = BASE_INTERVAL_MS + (Math.abs(random.nextLong()) % (jitter * 2)) - jitter;
+                nextDelay = Math.max(nextDelay, 60000L);
+
+                addLog("Next ping in " + (nextDelay / 60000) + "m " + ((nextDelay % 60000) / 1000) + "s");
 
                 updateNotification();
 
@@ -229,22 +246,28 @@ public class AutoPingerService extends Service {
                 String tgChat = prefs.getString("tg_chat", "");
                 if (pingCount % 5 == 0 || !success) {
                     sendTelegramWithCreds(tgToken, tgChat,
-                            (success ? "✅" : "❌") + " Ping #" + pingCount +
-                                    "\n🌐 " + fsn + "\n📄 " + ft +
-                                    "\n📊 HTTP " + fc + " • " + frt + "ms" +
-                                    "\n📈 Uptime: " + (pingCount > 0 ? (successCount * 100 / pingCount) : 0) + "%");
+                            (success ? "OK" : "FAIL") + " Ping #" + pingCount +
+                                    "\n" + fsn + "\n" + ft +
+                                    "\nHTTP " + fc + " - " + frt + "ms" +
+                                    "\nUptime: " + (pingCount > 0 ? (successCount * 100 / pingCount) : 0) + "%");
                 }
 
                 if (!isRunning) return;
                 if (expiryTime > 0 && System.currentTimeMillis() >= expiryTime) {
-                    stopSelfPinging("⏰ Duration khatam");
+                    stopSelfPinging("Duration khatam");
                     return;
                 }
-                nextPingTime = System.currentTimeMillis() + INTERVAL_MS;
+                nextPingTime = System.currentTimeMillis() + nextDelay;
                 updateNotification();
-                handler.postDelayed(pingTask, INTERVAL_MS);
+                handler.postDelayed(pingTask, nextDelay);
             });
         }).start();
+    }
+
+    private void addLog(String line) {
+        String ts = timeFmt.format(new Date());
+        logs.add(0, "[" + ts + "] " + line);
+        while (logs.size() > MAX_LOG_LINES) logs.remove(logs.size() - 1);
     }
 
     private String extractTag(String html, String regex) {
@@ -261,10 +284,6 @@ public class AutoPingerService extends Service {
                     "<meta[^>]+name=[\"']" + name + "[\"'][^>]+content=[\"']([^\"']*)[\"']",
                     Pattern.CASE_INSENSITIVE).matcher(html);
             if (m.find()) return m.group(1).trim();
-            m = Pattern.compile(
-                    "<meta[^>]+content=[\"']([^\"']*)[\"'][^>]+name=[\"']" + name + "[\"']",
-                    Pattern.CASE_INSENSITIVE).matcher(html);
-            if (m.find()) return m.group(1).trim();
         } catch (Exception ignored) {}
         return "—";
     }
@@ -272,14 +291,15 @@ public class AutoPingerService extends Service {
     private void stopSelfPinging(String reason) {
         isRunning = false;
         lastStatus = reason;
+        addLog("Stopped: " + reason);
         handler.removeCallbacks(pingTask);
         if (wakeLock != null && wakeLock.isHeld()) wakeLock.release();
 
         SharedPreferences prefs = getSharedPreferences("autopinger", MODE_PRIVATE);
         prefs.edit().putBoolean("was_running", false).apply();
 
-        sendTelegram("⏹️ AutoPinger Stopped\n" + reason +
-                "\n📊 Total: " + pingCount + " | ✅ " + successCount);
+        sendTelegram("AutoPinger Stopped\n" + reason +
+                "\nTotal: " + pingCount + " | Success: " + successCount);
 
         stopForeground(true);
         stopSelf();
@@ -304,10 +324,9 @@ public class AutoPingerService extends Service {
             nextStr = (left / 60000L) + "m " + ((left % 60000L) / 1000L) + "s";
         }
 
-        // Ultra-minimal silent notification
         return new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle(lastStatus)
-                .setContentText(siteName + " • " + pct + "% • next " + nextStr)
+                .setContentText(siteName + " - " + pct + "% - next " + nextStr)
                 .setSmallIcon(android.R.drawable.stat_notify_sync)
                 .setContentIntent(pi)
                 .setOngoing(true)
@@ -329,7 +348,6 @@ public class AutoPingerService extends Service {
             ch.enableVibration(false);
             ch.enableLights(false);
             ch.setSound(null, null);
-            ch.setLockscreenVisibility(Notification.VISIBILITY_SECRET);
             NotificationManager nm = getSystemService(NotificationManager.class);
             if (nm != null) nm.createNotificationChannel(ch);
         }
