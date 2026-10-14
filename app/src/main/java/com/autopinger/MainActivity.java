@@ -54,6 +54,7 @@ public class MainActivity extends AppCompatActivity {
             "7 Days", "15 Days", "30 Days", "Unlimited"
     };
     final long[] DURATION_MIN = { 60, 360, 720, 1440, 4320, 10080, 21600, 43200, 0 };
+    final int[] DURATION_COST = { 100, 500, 1000, 1500, 4000, 8000, 15000, 25000, 50000 };
 
     final String[] INTERVAL_LABELS = {
             "1 minute", "5 minutes", "10 minutes", "30 minutes", "1 hour"
