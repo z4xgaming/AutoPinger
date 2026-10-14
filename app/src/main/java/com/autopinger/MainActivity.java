@@ -364,6 +364,19 @@ public class MainActivity extends AppCompatActivity {
                 .show();
     }
 
+    private void showInsufficientCoins(final int need, final int have) {
+        new AlertDialog.Builder(this)
+                .setTitle("Insufficient Coins")
+                .setMessage("Need " + need + " coins.\n\n" +
+                        "Aapke paas: " + have + " coins.\n" +
+                        "Chahiye aur " + (need - have) + " coins.\n\n" +
+                        "Rewards section se free coins kamayein - Daily Spin, Scratch Card, Promo Codes!")
+                .setPositiveButton("Earn Coins", (d, w) ->
+                        startActivityForResult(new Intent(MainActivity.this, RewardsActivity.class), 500))
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
     private void stopPinging() {
         Intent svc = new Intent(this, AutoPingerService.class);
         stopService(svc);

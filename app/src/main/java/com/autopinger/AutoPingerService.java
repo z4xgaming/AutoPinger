@@ -57,6 +57,12 @@ public class AutoPingerService extends Service {
     public static volatile long siteContentLength = 0;
     public static volatile String siteHttpVersion = "—";
 
+    public static volatile boolean batterySaverMode = true;
+    public static volatile String siteAuthor = "—";
+    public static volatile String siteKeywords = "—";
+    public static volatile String siteContentType = "—";
+    public static volatile String siteH1 = "—";
+
     public static final List<String> logs = new ArrayList<>();
 
     Handler handler = new Handler(Looper.getMainLooper());
